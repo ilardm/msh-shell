@@ -30,6 +30,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package aid.myshows.shell;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+
 /**
  * 
  * @author Ilya Arefiev (arefiev.id@gmail.com)
@@ -41,7 +46,33 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		System.out.println("hlwrd");
+		
+		String os = System.getProperty("os.name", "");
+		System.out.println("MyShows shell runs @ " + os);
+
+		String cp = "UTF-8";
+		if (os.contains("Windows")) {
+			cp = "Cp866";
+		}
+
+		try {
+			Shell shell=new Shell(
+					new BufferedReader(
+							new InputStreamReader(System.in, cp)
+							),
+					new PrintWriter(
+							new OutputStreamWriter(System.out, cp),
+							true
+							)
+					);
+			
+			shell.run();
+			System.out.println("shell ended");
+			
+		} catch (Exception e) {
+			System.err.println("--- oops: "+e.getMessage());
+			e.printStackTrace();
+		}
 	}
 
 }

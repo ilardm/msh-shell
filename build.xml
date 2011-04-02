@@ -16,7 +16,7 @@
 
   <!-- versioning -->
   <property name="author.info" value="Ilya Arefiev (arefiev.id@gmail.com)" />
-  <property name="version.num" value="0.0" />
+  <property name="version.num" value="0.1" />
   <buildnumber file=".build.num" />
   <tstamp>
 	<format property="TODAY" pattern="yyyyMMdd:HHmmss" />
