@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- http://ant.apache.org/manual/tutorial-HelloWorldWithAnt.html -->
+<!-- + parts of Eclipse Runnable JAR Export Wizard -->
+
+<project name="msh-shell" basedir="." default="jar">
+  <!-- directories -->
+  <property name="src.dir" value="src" />
+  <property name="doc.dir" value="doc" />
+  <property name="lib.dir" value="libs" />
+  <property name="build.dir" value="build" />
+  <property name="classes.dir" value="${build.dir}/classes" />
+  <property name="jar.dir" value="${build.dir}/jar" />
+
+  <!-- executable class -->
+  <property name="main-class" value="aid.myshows.shell.Main" />
+
+  <!-- versioning -->
+  <property name="author.info" value="Ilya Arefiev (arefiev.id@gmail.com)" />
+  <property name="version.num" value="0.0" />
+  <buildnumber file=".build.num" />
+  <tstamp>
+	<format property="TODAY" pattern="yyyyMMdd:HHmmss" />
+	<format property="TODAY.YEAR" pattern="yyyy" />
+  </tstamp>
+  <property name="version.impl" value="${build.number}"/>
+
+  <!-- release destination -->
+  <property name="release.dir" value="${ant.project.name}-${version.num}" />
+
+  <!-- libraries path -->
+  <path id="classpath">
+	<fileset dir="${lib.dir}" includes="**/*.jar" />
+  </path>
+
+  <!-- BODY -->
+  
+  <target name="clean">
+	<delete dir="${build.dir}" />
+	<delete dir="${release.dir}" />
+	<delete dir="${doc.dir}" />
+  </target>
+
+  <target name="compile">
+	<mkdir dir="${classes.dir}" />
+	
+	<javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" />
+  </target>
+
+  <target name="jar" depends="compile">
+	<mkdir dir="${jar.dir}" />
+	
+	<jar destfile="${jar.dir}/${ant.project.name}.jar">
+	  <manifest>
+		<!-- is jar executable? -->
+		<attribute name="Main-Class" value="${main-class}" />
+		
+		<!-- list here all *.jar libraries -->
+		<attribute name="Class-Path" value=". commons-logging-1.1.1.jar httpclient-4.0.1.jar httpcore-4.0.1.jar org-json.jar lib-myshows.jar" />
+
+		<!-- versioning info -->
+		<attribute name="Specification-Vendor" value="${author.info}" />
+		<attribute name="Specification-Version" value="${version.num}" />
+		
+		<attribute name="Implementation-Vendor" value="${user.name}" />
+		<attribute name="Implementation-Version" value="${version.impl}" />
+	  </manifest>
+	  
+	  <fileset dir="${classes.dir}" />
+
+	  <!-- add non-code files into jar -->
+	  <fileset file="LICENSE" />
+	</jar>
+  </target>
+
+  <target name="doc">
+	<mkdir dir="${doc.dir}" />
+	
+	<javadoc sourcepath="${src.dir}"
+			 destdir="${doc.dir}"
+			 windowtitle="${ant.project.name} v${version.num} documentation"
+			 author="true"
+			 >
+	  <bottom>
+		<![CDATA[<i>Copyright &#169; ${TODAY.YEAR} ${author.info}</i><br>
+				 license may be found in LICENSE file]]>
+	  </bottom>
+	</javadoc>
+
+	<copy todir="${doc.dir}" file="LICENSE" />
+  </target>
+
+  <target name="release" depends="clean, jar, doc">
+	<mkdir dir="${release.dir}" />
+
+	<!-- pack docs into zip -->
+	<zip destfile="${release.dir}/${ant.project.name}-${version.num}-doc.zip">
+	  <zipfileset dir="${doc.dir}" prefix="${ant.project.name}-${version.num}-doc"/>
+	</zip>
+
+	<!-- copy built jar into release directory -->
+	<copy file="${jar.dir}/${ant.project.name}.jar"
+		  tofile="${release.dir}/${ant.project.name}-${version.num}.jar" />
+
+	<!-- copy all libs into release directory -->
+	<copy todir="${release.dir}">
+	  <fileset dir="${lib.dir}" includes="**/*.jar" />
+	</copy>
+  </target>
+
+</project>
