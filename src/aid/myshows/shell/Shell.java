@@ -36,6 +36,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import aid.lib.myshows.MyshowsClient;
 
@@ -52,6 +53,9 @@ public class Shell {
 	protected String cmd=null;
 	
 	protected MyshowsClient mshClient=null;
+	
+	// TODO: temporary workaround. rewrite it
+	protected enum lsResultType { ALL, SEEN, NEXT, UNWATCHED };
 	
 	/**
 	 * shell constructor<br>
@@ -219,14 +223,16 @@ public class Shell {
 	
 	protected void ls(String _args) {
 		JSONArray result=null;
+		lsResultType resultType=null;
 		
 		// TODO: parse shows and episodes case
 		/*
 		 * params: seen, next, unwatched
 		 */
-		
+
 		if ( _args==null || _args.equals("") ) {
 			result=mshClient.getShows();
+			resultType=lsResultType.ALL;
 		} else {
 			String args[]=_args.split(" ");
 			
@@ -242,10 +248,13 @@ public class Shell {
 			
 			if ( _args.contains("seen") ) {
 				result=mshClient.getSeenEpisodes(show);
+				resultType=lsResultType.SEEN;
 			} else if ( _args.contains("next") ) {
 				result=mshClient.getNextEpisodes(show);
+				resultType=lsResultType.NEXT;
 			} else if ( _args.contains("unwatched") ) {
 				result=mshClient.getUnwatchedEpisodes(show);
+				resultType=lsResultType.UNWATCHED;
 			} else {
 				// TODO: implement listing all show episodes
 			}
@@ -253,7 +262,63 @@ public class Shell {
 		
 		if ( result!=null ) {
 			try {
-				writer.println( result.toString(2) );
+//				writer.println( result.toString(2) );
+
+				int len=result.length();
+				JSONObject resultItem=null;
+
+				// TODO: format list of shows
+				/*
+				 * add each line into array
+				 * calculate length
+				 * format string
+				 * ( see to sclaus's database )
+				 */
+
+				for ( int i=0; i<len; i++ ) {
+					resultItem=result.getJSONObject(i);
+					String out="";
+
+					switch ( resultType ) {
+					case ALL:
+						out=resultItem.getInt("showId")+"\t"+
+							resultItem.getString("title")+"\t"+
+							resultItem.getInt("watchedEpisodes")+"/"+
+							resultItem.getInt("totalEpisodes")+"\t"+
+							"("+resultItem.getString("watchStatus")+ " | "+
+							resultItem.getString("showStatus")+ ")\t"+
+							resultItem.getInt("runtime");
+						break;
+					case SEEN:
+						out=resultItem.getInt("id")+"\t"+
+							resultItem.getString("watchDate");
+						break;
+					case NEXT:
+						out=resultItem.getInt("episodeId")+" : "+
+							resultItem.getInt("showId")+"\t"+
+							resultItem.getString("title")+"\t"+
+							"S"+resultItem.getInt("seasonNumber")+
+							"E"+resultItem.getInt("episodeNumber")+"\t"+
+							resultItem.getString("airDate");
+						break;
+					case UNWATCHED:
+						out=resultItem.getInt("episodeId")+" : "+
+							resultItem.getInt("showId")+"\t"+
+							resultItem.getString("title")+"\t"+
+							"S"+resultItem.getInt("seasonNumber")+
+							"E"+resultItem.getInt("episodeNumber")+"\t"+
+							resultItem.getString("airDate");
+					break;
+					default:
+						// this should never happens
+						out="--- smth goes wrong - unknown result type";
+						break;
+					}
+
+					writer.println(out);
+				}
+				writer.flush();
+
 			} catch (Exception e) {
 				writer.println("--- oops: "+e.getMessage());
 				writer.flush();
