@@ -47,6 +47,10 @@ import aid.lib.myshows.MyshowsClient;
  */
 public class Shell {
 	
+	public static final float VERSION=0.1F;
+	public static final int VERSION_BUILD=13;
+	public static final String VERSION_FULL=VERSION+"."+VERSION_BUILD;
+
 	protected BufferedReader reader=null;
 	protected PrintWriter writer=null;
 	
@@ -66,7 +70,18 @@ public class Shell {
 	 * @param _writer OutputStreamWriter with correct encoding to use as stdout
 	 */
 	public Shell(BufferedReader _reader, PrintWriter _writer) {
-		System.out.println("+++ Shell()");
+		System.out.println("shell version: "+
+				aid.myshows.shell.Shell.VERSION+
+				" : "+aid.myshows.shell.Shell.VERSION_FULL);
+
+		System.out.println("api version: "+
+				aid.lib.myshows.MyshowsAPI.VERSION+
+				" : "+aid.lib.myshows.MyshowsAPI.VERSION_FULL);
+
+		if ( aid.lib.myshows.MyshowsAPI.VERSION!=0.1F ) {
+			System.err.println("--- incompatible library version");
+			System.exit(1);
+		}
 		
 		if ( _reader.equals(null) ) {
 			reader=new BufferedReader(
@@ -256,7 +271,9 @@ public class Shell {
 				result=mshClient.getUnwatchedEpisodes(show);
 				resultType=lsResultType.UNWATCHED;
 			} else {
-				// TODO: implement listing all show episodes
+				// TODO: temporary. implement listing all show episodes
+				result=mshClient.getUnwatchedEpisodes(show);
+				resultType=lsResultType.UNWATCHED;
 			}
 		}
 		
@@ -281,34 +298,33 @@ public class Shell {
 
 					switch ( resultType ) {
 					case ALL:
-						out=resultItem.getInt("showId")+"\t"+
-							resultItem.getString("title")+"\t"+
-							resultItem.getInt("watchedEpisodes")+"/"+
-							resultItem.getInt("totalEpisodes")+"\t"+
-							"("+resultItem.getString("watchStatus")+ " | "+
-							resultItem.getString("showStatus")+ ")\t"+
-							resultItem.getInt("runtime");
+						out=String.format("%1$4d | %2$-45s | %3$-7s | %4$3s | %5$3d",
+								resultItem.getInt("showId"),
+								resultItem.getString("title"),
+								resultItem.getInt("watchedEpisodes")+"/"+
+									resultItem.getInt("totalEpisodes"),
+								resultItem.getString("watchStatus").charAt(0)+
+									"/"+resultItem.getString("showStatus").charAt(0),
+								resultItem.getInt("runtime")
+								);
 						break;
 					case SEEN:
-						out=resultItem.getInt("id")+"\t"+
-							resultItem.getString("watchDate");
+						out=String.format("%1$7d | %2$10s",
+								resultItem.getInt("id"),
+								resultItem.getString("watchDate")
+								);
 						break;
 					case NEXT:
-						out=resultItem.getInt("episodeId")+" : "+
-							resultItem.getInt("showId")+"\t"+
-							resultItem.getString("title")+"\t"+
-							"S"+resultItem.getInt("seasonNumber")+
-							"E"+resultItem.getInt("episodeNumber")+"\t"+
-							resultItem.getString("airDate");
-						break;
 					case UNWATCHED:
-						out=resultItem.getInt("episodeId")+" : "+
-							resultItem.getInt("showId")+"\t"+
-							resultItem.getString("title")+"\t"+
-							"S"+resultItem.getInt("seasonNumber")+
-							"E"+resultItem.getInt("episodeNumber")+"\t"+
-							resultItem.getString("airDate");
-					break;
+						out=String.format("%1$7d (%2$-4d) | %3$-40s | s%4$02de%5$02d | %6$10s",
+								resultItem.getInt("episodeId"),
+								resultItem.getInt("showId"),
+								resultItem.getString("title"),
+								resultItem.getInt("seasonNumber"),
+								resultItem.getInt("episodeNumber"),
+								resultItem.getString("airDate")
+								);
+						break;
 					default:
 						// this should never happens
 						out="--- smth goes wrong - unknown result type";
