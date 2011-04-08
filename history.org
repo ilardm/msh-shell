@@ -1,0 +1,10 @@
+* DONE v0.1 b17 <2011-04-09>
+  using lib-myshows v0.1 b13
+** DONE shell
+*** DONE implement all methods of lib-myshows/Client
+	+ list shows
+	+ list episodes
+	  + unwatched
+	  + watched
+	  + next
+	+ [un]chek episodes

@@ -1,0 +1,44 @@
+@author Ilya Arefiev (arefiev.id@gmail.com)
+
+This is a simple shell developed for test lib-myshows
+(https://github.com/ilardm/lib-myshows)
+Latest version of msh-shell may be found at
+https://github.com/ilardm/msh-shell
+
+=== BUILDING ===
+
+Before building You should checkout, build lib-myshows
+(https://github.com/ilardm/lib-myshows) and place assembled library into
+'msh-shell/lib' directory (without version into filename).
+Major version of shell is the same as major version of library(msh-shell v0.1
+uses lib-myshows v0.1).
+
+Run
+    ant release
+to build executable .jar and documentation, placed in "msh-shell-$version".
+"msh-shell-$version" directory also contains all necessary libraries required
+to work properly.
+
+Current implementation of shell(in case you have only .jar file) may be found
+in .jar file "META_INF/MANIFEST.MF".
+Version info also included into 'Shell.java' represented as auto-generated
+variable updated on every 'ant compile' run.
+
+Run
+    ant jar
+to build just .jar, placed in "build/jar".
+
+=== REQUIREMENTS ===
+
+Requires
+    commons-logging-1.1.1.jar
+    httpclient-4.0.1.jar
+    httpcore-4.0.1.jar
+    org-json.jar
+    lib-myshows.jar
+placed near assembled .jar file to work properly.
+
+=== LICENSE ===
+
+Licensed under modified BSD license. Copy of license may be found in LICENSE
+file (.jar file also contains LICENSE).

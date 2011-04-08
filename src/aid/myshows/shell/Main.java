@@ -36,14 +36,18 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 
 /**
+ * main class of shell<br>
+ * determines correct codepage(currently based on running operating system:
+ * using UTF-8 for unix-like systems and cp866 for Windows),
+ * constructs and executes shell-object with properly configured(correct
+ * codepage) input/output streams reader/writer
  * 
  * @author Ilya Arefiev (arefiev.id@gmail.com)
- *
  */
 public class Main {
 
 	/**
-	 * @param args
+	 * @param args currently no params supported
 	 */
 	public static void main(String[] args) {
 		

@@ -44,21 +44,63 @@ import org.json.JSONObject;
 import aid.lib.myshows.MyshowsClient;
 
 /**
+ * shell with main event loop
  * 
  * @author Ilya Arefiev (arefiev.id@gmail.com)
- *
  */
 public class Shell {
 	
+	/**
+	 * auto-generated major version<br>
+	 * based on ant build.xml script and reassigned during every 'ant compile'<br>
+	 * usually same as major version of lib-myshows<br>
+	 *
+	 * <b>do not edit this!</b>
+	 */
 	public static final float VERSION=0.1F;
-	public static final int VERSION_BUILD=14;
+
+	/**
+	 * auto-generated build number<br>
+	 * based on ant build.xml script and reassigned during every 'ant compile'<br>
+	 *
+	 * <b>do not edit this!</b>
+	 */
+	public static final int VERSION_BUILD=16;
+
+	/**
+	 * auto-generated full version number<br>
+	 * based on ant build.xml script and reassigned during every 'ant compile'<br>
+	 *
+	 * <b>do not edit this!</b>
+	 */
 	public static final String VERSION_FULL=VERSION+"."+VERSION_BUILD;
 
+	/**
+	 * <i>correct</i> inputStreamReader<br>
+	 * defined on construction or created by default(if nothing passed through
+	 * constructor)
+	 *
+	 *  @see Shell
+	 */
 	protected BufferedReader reader=null;
+
+	/**
+	 * <i>correct</i> outputStreamWriter<br>
+	 * defined on construction or created by default(if nothing passed through
+	 * constructor)
+	 *
+	 * @see Shell
+	 */
 	protected PrintWriter writer=null;
-	
+
+	/**
+	 * contains last inputed command in event loop
+	 */
 	protected String cmd=null;
 	
+	/**
+	 * myshows API client
+	 */
 	protected MyshowsClient mshClient=null;
 	
 	// TODO: temporary workaround. rewrite it
@@ -88,6 +130,7 @@ public class Shell {
 		}
 		
 		if ( _reader.equals(null) ) {
+			// construct reader by default
 			reader=new BufferedReader(
 					new InputStreamReader(System.in)
 					);
@@ -96,6 +139,7 @@ public class Shell {
 		}
 		
 		if ( _writer.equals(null) ) {
+			// construct writer by default
 			writer=new PrintWriter(
 					new OutputStreamWriter(System.out),
 					true
@@ -112,8 +156,8 @@ public class Shell {
 	//--------------------------------------------------------------------------
 	
 	/**
-	 * main loop<br>
-	 * reads cmds, parses them and executes api's calls<br>
+	 * main event loop<br>
+	 * reads cmds, parses them and executes API's calls<br>
 	 * cmd string checking placed in frequency order
 	 */
 	public void run() {
@@ -187,7 +231,7 @@ public class Shell {
 	//--------------------------------------------------------------------------
 	
 	/**
-	 * prints known commands and help for them
+	 * prints known commands and usage information for them
 	 */
 	protected void help() {
 		writer.println(
@@ -240,6 +284,10 @@ public class Shell {
 		writer.flush();
 	}
 	
+	/**
+	 * list shows and episodes
+	 * @param _args arguments passed to <code>ls</code> command
+	 */
 	protected void ls(String _args) {
 		JSONArray result=null;
 		lsResultType resultType=null;
@@ -350,6 +398,10 @@ public class Shell {
 		
 	}
 	
+	/**
+	 * marks episode as seen
+	 * @param _args episodeId passed to <code>check</code> command
+	 */
 	protected void check(String _args) {
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
@@ -391,6 +443,10 @@ public class Shell {
 		writer.flush();
 	}
 	
+	/**
+	 * marks episode as unwatched
+	 * @param _args $episodeId passed to <code>uncheck</code> command
+	 */
 	protected void uncheck(String _args) {
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
