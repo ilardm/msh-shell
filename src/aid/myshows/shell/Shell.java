@@ -34,6 +34,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.TreeSet;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -48,7 +51,7 @@ import aid.lib.myshows.MyshowsClient;
 public class Shell {
 	
 	public static final float VERSION=0.1F;
-	public static final int VERSION_BUILD=13;
+	public static final int VERSION_BUILD=14;
 	public static final String VERSION_FULL=VERSION+"."+VERSION_BUILD;
 
 	protected BufferedReader reader=null;
@@ -78,6 +81,7 @@ public class Shell {
 				aid.lib.myshows.MyshowsAPI.VERSION+
 				" : "+aid.lib.myshows.MyshowsAPI.VERSION_FULL);
 
+		// check for compatible version
 		if ( aid.lib.myshows.MyshowsAPI.VERSION!=0.1F ) {
 			System.err.println("--- incompatible library version");
 			System.exit(1);
@@ -240,11 +244,6 @@ public class Shell {
 		JSONArray result=null;
 		lsResultType resultType=null;
 		
-		// TODO: parse shows and episodes case
-		/*
-		 * params: seen, next, unwatched
-		 */
-
 		if ( _args==null || _args.equals("") ) {
 			result=mshClient.getShows();
 			resultType=lsResultType.ALL;
@@ -279,18 +278,10 @@ public class Shell {
 		
 		if ( result!=null ) {
 			try {
-//				writer.println( result.toString(2) );
-
 				int len=result.length();
 				JSONObject resultItem=null;
 
-				// TODO: format list of shows
-				/*
-				 * add each line into array
-				 * calculate length
-				 * format string
-				 * ( see to sclaus's database )
-				 */
+				HashMap<Integer, String> outputMap=new HashMap<Integer, String>();
 
 				for ( int i=0; i<len; i++ ) {
 					resultItem=result.getJSONObject(i);
@@ -307,12 +298,14 @@ public class Shell {
 									"/"+resultItem.getString("showStatus").charAt(0),
 								resultItem.getInt("runtime")
 								);
+						outputMap.put(resultItem.getInt("showId"), out);
 						break;
 					case SEEN:
 						out=String.format("%1$7d | %2$10s",
 								resultItem.getInt("id"),
 								resultItem.getString("watchDate")
 								);
+						outputMap.put(resultItem.getInt("id"), out);
 						break;
 					case NEXT:
 					case UNWATCHED:
@@ -324,15 +317,25 @@ public class Shell {
 								resultItem.getInt("episodeNumber"),
 								resultItem.getString("airDate")
 								);
+						outputMap.put(resultItem.getInt("episodeId"), out);
 						break;
 					default:
 						// this should never happens
 						out="--- smth goes wrong - unknown result type";
 						break;
 					}
-
-					writer.println(out);
 				}
+
+				// sorted set of IDs
+				TreeSet<Integer> sortedSet=new TreeSet<Integer>(outputMap.keySet());
+				Iterator<Integer> iter=sortedSet.iterator();
+				while ( iter.hasNext() ) {
+					writer.println(
+							outputMap.get( iter.next() )
+							);
+				}
+				writer.println("----\n("+outputMap.size()+")");
+
 				writer.flush();
 
 			} catch (Exception e) {
