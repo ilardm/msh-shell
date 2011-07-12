@@ -57,7 +57,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final float VERSION=0.1F;
+	public static final float VERSION=0.2F;
 
 	/**
 	 * auto-generated build number<br>
@@ -65,7 +65,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final int VERSION_BUILD=16;
+	public static final int VERSION_BUILD=4;
 
 	/**
 	 * auto-generated full version number<br>
@@ -124,7 +124,7 @@ public class Shell {
 				" : "+aid.lib.myshows.MyshowsAPI.VERSION_FULL);
 
 		// check for compatible version
-		if ( aid.lib.myshows.MyshowsAPI.VERSION!=0.1F ) {
+		if ( aid.lib.myshows.MyshowsAPI.VERSION!=0.2F ) {
 			System.err.println("--- incompatible library version");
 			System.exit(1);
 		}
@@ -195,7 +195,14 @@ public class Shell {
 				}
 				
 				// low frequency
-				
+
+				if ( cmd.trim().startsWith("sst") ) {
+					cmd=cmd.replaceFirst("sst", "").trim();
+
+					setShowStatus(cmd);
+					continue;
+				}
+
 				if ( cmd.trim().startsWith("help") || cmd.trim().equals("?") ) {
 					help();
 					continue;
@@ -476,6 +483,38 @@ public class Shell {
 		
 		boolean es=mshClient.unCheckEpisode(episode);
 		writer.println("+++ uncheck: "+ (es ? "done" : "failed") );
+		writer.flush();
+	}
+
+	protected void setShowStatus(String _args) {
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		String[] args=_args.split(" ");
+		int show=-1;
+		String status="";
+
+		if ( args.length>1 ) {
+			try {
+				show=Integer.parseInt( args[0] );
+				status=args[1];
+			} catch (Exception e) {
+				writer.println("--- wrong episode number: "+args[0]);
+				writer.flush();
+
+				return;
+			}
+		} else {
+			writer.println("--- not enought params");
+			writer.flush();
+		}
+
+		boolean es=mshClient.setShowStatus(show, status);
+		writer.println("+++ setShowStatus: "+ (es ? "done" : "failed") );
 		writer.flush();
 	}
 }
