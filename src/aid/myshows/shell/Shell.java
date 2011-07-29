@@ -65,7 +65,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final int VERSION_BUILD=7;
+	public static final int VERSION_BUILD=8;
 
 	/**
 	 * auto-generated full version number<br>
@@ -207,6 +207,13 @@ public class Shell {
 					cmd=cmd.replaceFirst("ser", "").trim();
 
 					setEpisodeRatio(cmd);
+					continue;
+				}
+
+				if ( cmd.trim().startsWith("fav") ) {
+					cmd=cmd.replaceFirst("fav", "").trim();
+
+					favoriteShow(cmd);
 					continue;
 				}
 
@@ -595,6 +602,44 @@ public class Shell {
 
 		boolean es=mshClient.setEpisodeRatio(episode, ratio);
 		writer.println("+++ setEpisodeRatio: "+ (es ? "done" : "failed") );
+		writer.flush();
+	}
+
+	protected void favoriteShow(String _args) {
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		String[] args=_args.split(" ");
+		int show=-1;
+		boolean add=false;
+
+		if ( args.length>1 ) {
+			try {
+				show=Integer.parseInt( args[0] );
+				if ( args[1].equals("add") ) {
+					add=true;
+				} else if ( args[1].equals("rm") ) {
+					add=false;
+				} else {
+					System.err.println("--- wrong action: '"+args[1]+"'");
+				}
+			} catch (Exception e) {
+				writer.println("--- wrong show || action: '"+_args+"'");
+				writer.flush();
+
+				return;
+			}
+		} else {
+			writer.println("--- not enought params");
+			writer.flush();
+		}
+
+		boolean es=mshClient.favoriteShow(show, add);
+		writer.println("+++ favoriteShow: "+ (es ? "done" : "failed") );
 		writer.flush();
 	}
 }
