@@ -65,7 +65,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final int VERSION_BUILD=4;
+	public static final int VERSION_BUILD=6;
 
 	/**
 	 * auto-generated full version number<br>
@@ -255,8 +255,10 @@ public class Shell {
 				"\t"+"logout - logout from MyShows"+"\n"+
 				"\t"+"exit - exit from shell"+"\n"+
 				"\t"+"ls [$showId] [seen] [next] [unwatched] - list shows/episodes"+"\n"+
-				"\t"+"check [$episodeId] [$raio] - mark show/episode as seen [with ratio]"+"\n"+
-				"\t"+"uncheck [$episodeId] - mark show/eisode as unseen"+"\n"
+				"\t"+"check <$episodeId> [$raio] - mark show/episode as seen [with ratio]"+"\n"+
+				"\t"+"uncheck <$episodeId> - mark show/eisode as unseen"+"\n"+
+				"\t"+"sst <$showId> <$status> - set show status"+"\n"+
+				"\t"+"ser <$episodeId> <$ratio> - set episode ratio"+"\n"
 				);
 		writer.flush();
 	}
