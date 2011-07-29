@@ -65,7 +65,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final int VERSION_BUILD=6;
+	public static final int VERSION_BUILD=7;
 
 	/**
 	 * auto-generated full version number<br>
@@ -207,6 +207,13 @@ public class Shell {
 					cmd=cmd.replaceFirst("ser", "").trim();
 
 					setEpisodeRatio(cmd);
+					continue;
+				}
+
+				if ( cmd.trim().startsWith("ssr") ) {
+					cmd=cmd.replaceFirst("ssr", "").trim();
+
+					setShowRatio(cmd);
 					continue;
 				}
 
@@ -524,6 +531,38 @@ public class Shell {
 
 		boolean es=mshClient.setShowStatus(show, status);
 		writer.println("+++ setShowStatus: "+ (es ? "done" : "failed") );
+		writer.flush();
+	}
+
+	protected void setShowRatio(String _args) {
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		String[] args=_args.split(" ");
+		int show=-1;
+		int ratio=-1;
+
+		if ( args.length>1 ) {
+			try {
+				show=Integer.parseInt( args[0] );
+				ratio=Integer.parseInt( args[1] );
+			} catch (Exception e) {
+				writer.println("--- wrong show number: "+args[0]);
+				writer.flush();
+
+				return;
+			}
+		} else {
+			writer.println("--- not enought params");
+			writer.flush();
+		}
+
+		boolean es=mshClient.setShowRatio(show, ratio);
+		writer.println("+++ setShowRatio: "+ (es ? "done" : "failed") );
 		writer.flush();
 	}
 
