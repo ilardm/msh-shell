@@ -203,6 +203,13 @@ public class Shell {
 					continue;
 				}
 
+				if ( cmd.trim().startsWith("ser") ) {
+					cmd=cmd.replaceFirst("ser", "").trim();
+
+					setEpisodeRatio(cmd);
+					continue;
+				}
+
 				if ( cmd.trim().startsWith("help") || cmd.trim().equals("?") ) {
 					help();
 					continue;
@@ -515,6 +522,38 @@ public class Shell {
 
 		boolean es=mshClient.setShowStatus(show, status);
 		writer.println("+++ setShowStatus: "+ (es ? "done" : "failed") );
+		writer.flush();
+	}
+
+	protected void setEpisodeRatio(String _args) {
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		String[] args=_args.split(" ");
+		int episode=-1;
+		int ratio=-1;
+
+		if ( args.length>1 ) {
+			try {
+				episode=Integer.parseInt( args[0] );
+				ratio=Integer.parseInt( args[1] );
+			} catch (Exception e) {
+				writer.println("--- wrong episode number: "+args[0]);
+				writer.flush();
+
+				return;
+			}
+		} else {
+			writer.println("--- not enought params");
+			writer.flush();
+		}
+
+		boolean es=mshClient.setEpisodeRatio(episode, ratio);
+		writer.println("+++ setEpisodeRatio: "+ (es ? "done" : "failed") );
 		writer.flush();
 	}
 }
