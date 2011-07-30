@@ -65,7 +65,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final int VERSION_BUILD=8;
+	public static final int VERSION_BUILD=9;
 
 	/**
 	 * auto-generated full version number<br>
@@ -217,6 +217,18 @@ public class Shell {
 					continue;
 				}
 
+				if ( cmd.trim().startsWith("git") ) {
+					getIgnoredEpisodes();
+					continue;
+				}
+
+				if ( cmd.trim().startsWith("ignored") ) {
+					cmd=cmd.replaceFirst("ignored", "").trim();
+
+					ignoreEpisode(cmd);
+					continue;
+				}
+
 				if ( cmd.trim().startsWith("ssr") ) {
 					cmd=cmd.replaceFirst("ssr", "").trim();
 
@@ -272,7 +284,10 @@ public class Shell {
 				"\t"+"check <$episodeId> [$raio] - mark show/episode as seen [with ratio]"+"\n"+
 				"\t"+"uncheck <$episodeId> - mark show/eisode as unseen"+"\n"+
 				"\t"+"sst <$showId> <$status> - set show status"+"\n"+
-				"\t"+"ser <$episodeId> <$ratio> - set episode ratio"+"\n"
+				"\t"+"ser <$episodeId> <$ratio> - set episode ratio"+"\n"+
+				"\t"+"fav <$episodeId> <add|rm> - add/remove episode to favorites"+"\n"+
+				"\t"+"git - list ignored episodes"+"\n"+
+				"\t"+"ignored <$episodeId> <add|rm> - add/remove episode to ignored"+"\n"
 				);
 		writer.flush();
 	}
@@ -427,7 +442,80 @@ public class Shell {
 		}
 		
 	}
-	
+
+	protected void getIgnoredEpisodes() {
+//		System.out.println("+++ shell.getIgnored");
+
+		JSONArray ret=mshClient.getIgnoredEpisodes();
+
+		if ( ret!=null ) {
+			TreeSet<Integer> outputTree=new TreeSet<Integer>();
+
+			try {
+//				System.out.println( ret.toString(2) );
+				int sz=ret.length();
+				for( int i=0; i<sz; i++ ) {
+					outputTree.add( ret.getInt(i) );
+				}
+
+				Iterator<Integer> iter=outputTree.iterator();
+				while ( iter.hasNext() ) {
+					writer.println(
+							iter.next()
+							);
+				}
+				writer.println("----\n("+outputTree.size()+")");
+
+				writer.flush();
+			} catch (Exception e) {
+				writer.println("--- oops: "+e.getMessage());
+				writer.flush();
+				e.printStackTrace();
+
+			}
+		} else {
+			System.err.println("--- ret=NULL");
+		}
+	}
+
+	protected void ignoreEpisode(String _args) {
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		String[] args=_args.split(" ");
+		int episode=-1;
+		boolean add=false;
+
+		if ( args.length>1 ) {
+			try {
+				episode=Integer.parseInt( args[0] );
+				if ( args[1].equals("add") ) {
+					add=true;
+				} else if ( args[1].equals("rm") ) {
+					add=false;
+				} else {
+					System.err.println("--- wrong action: '"+args[1]+"'");
+				}
+			} catch (Exception e) {
+				writer.println("--- wrong episode || action: '"+_args+"'");
+				writer.flush();
+
+				return;
+			}
+		} else {
+			writer.println("--- not enought params");
+			writer.flush();
+		}
+
+		boolean es=mshClient.ignoreEpisode(episode, add);
+		writer.println("+++ ignoreEpisode: "+ (es ? "done" : "failed") );
+		writer.flush();
+	}
+
 	/**
 	 * marks episode as seen
 	 * @param _args episodeId passed to <code>check</code> command
