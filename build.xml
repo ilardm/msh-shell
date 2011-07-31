@@ -52,7 +52,7 @@
 
 	<mkdir dir="${classes.dir}" />
 	
-	<javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" />
+	<javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" includeantruntime="false"/>
   </target>
 
   <target name="jar" depends="compile">

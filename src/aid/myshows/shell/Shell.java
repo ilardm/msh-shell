@@ -34,6 +34,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -65,7 +68,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final int VERSION_BUILD=9;
+	public static final int VERSION_BUILD=10;
 
 	/**
 	 * auto-generated full version number<br>
@@ -193,7 +196,12 @@ public class Shell {
 					uncheck(cmd);
 					continue;
 				}
-				
+
+				if ( cmd.trim().startsWith("news") ) {
+					news();
+					continue;
+				}
+
 				// low frequency
 
 				if ( cmd.trim().startsWith("sst") ) {
@@ -258,7 +266,7 @@ public class Shell {
 				
 			} while ( true );
 			
-			writer.println("\nbue!");
+			writer.println("\nbye!");
 			writer.flush();
 			
 		} catch (Exception e) {
@@ -283,7 +291,7 @@ public class Shell {
 				"\t"+"ls [$showId] [seen] [next] [unwatched] - list shows/episodes"+"\n"+
 				"\t"+"check <$episodeId> [$raio] - mark show/episode as seen [with ratio]"+"\n"+
 				"\t"+"uncheck <$episodeId> - mark show/eisode as unseen"+"\n"+
-				"\t"+"sst <$showId> <$status> - set show status"+"\n"+
+				"\t"+"sst <$showId> <$status> - set show status $status is one of (watching, later, cancelled, remove)"+"\n"+
 				"\t"+"ser <$episodeId> <$ratio> - set episode ratio"+"\n"+
 				"\t"+"fav <$episodeId> <add|rm> - add/remove episode to favorites"+"\n"+
 				"\t"+"git - list ignored episodes"+"\n"+
@@ -443,6 +451,9 @@ public class Shell {
 		
 	}
 
+	/**
+	 * prints ignored $episodeId list
+	 */
 	protected void getIgnoredEpisodes() {
 //		System.out.println("+++ shell.getIgnored");
 
@@ -478,6 +489,10 @@ public class Shell {
 		}
 	}
 
+	/**
+	 * add/remove $episodeId to/from ignore list
+	 * @param _args arguments passed to <code>ignore</code> command
+	 */
 	protected void ignoreEpisode(String _args) {
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
@@ -597,6 +612,10 @@ public class Shell {
 		writer.flush();
 	}
 
+	/**
+	 * sets $showId status
+	 * @param _args arguments passed to <code>sst</code> command
+	 */
 	protected void setShowStatus(String _args) {
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
@@ -607,12 +626,12 @@ public class Shell {
 
 		String[] args=_args.split(" ");
 		int show=-1;
-		String status="";
+		char status='_';
 
 		if ( args.length>1 ) {
 			try {
 				show=Integer.parseInt( args[0] );
-				status=args[1];
+				status=args[1].charAt(0);
 			} catch (Exception e) {
 				writer.println("--- wrong episode number: "+args[0]);
 				writer.flush();
@@ -629,6 +648,10 @@ public class Shell {
 		writer.flush();
 	}
 
+	/**
+	 * sets $showId ratio
+	 * @param _args arguments passed to <code>ssr</code> command
+	 */
 	protected void setShowRatio(String _args) {
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
@@ -661,6 +684,10 @@ public class Shell {
 		writer.flush();
 	}
 
+	/**
+	 * sets $episodeId ratio
+	 * @param _args arguments passed to <code>ser</code> command
+	 */
 	protected void setEpisodeRatio(String _args) {
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
@@ -693,6 +720,10 @@ public class Shell {
 		writer.flush();
 	}
 
+	/**
+	 * add/remove $showId to/from favorite list
+	 * @param _args arguments passed to <code>favorite</code> command
+	 */
 	protected void favoriteShow(String _args) {
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
@@ -729,5 +760,83 @@ public class Shell {
 		boolean es=mshClient.favoriteShow(show, add);
 		writer.println("+++ favoriteShow: "+ (es ? "done" : "failed") );
 		writer.flush();
+	}
+
+	/**
+	 * prints news list
+	 */
+	protected void news() {
+		JSONObject result=mshClient.getFriendsUpdates();
+
+		if ( result!=null ) {
+			try {
+//				System.out.println( result.toString(2) );
+
+				// parsing
+				/*
+				 * {
+			  "10.07.2011": [{
+			    "action": "watch",
+			    "episode": "s03e14",
+			    "episodeId": 687,
+			    "episodes": 1,
+			    "gender": "m",
+			    "login": "ilardm",
+			    "show": "Everybody Hates Chris",
+			    "showId": 9,
+			    "title": "Everybody Hates Easter"
+			  }],
+			  ...
+			  }
+				 */
+
+				SimpleDateFormat inputFmt=new SimpleDateFormat("dd.MM.yyyy");
+				SimpleDateFormat outputFmt=new SimpleDateFormat("E d MMM yyyy");
+				Date date=null;
+				String key=null;
+//				HashMap<Date, JSONArray> newsMap=new HashMap<Date, JSONArray>();
+				TreeSet<Date> newsTree=new TreeSet<Date>();
+				Iterator<String> iter=result.keys();
+				JSONArray events=null;
+				JSONObject event=null;
+
+				while ( iter.hasNext() ) {
+					key=iter.next();
+					date=inputFmt.parse( key );
+//					System.out.println("+++ date "+key+" parsed to "+date);
+					newsTree.add( date );
+				}
+
+				Iterator<Date> mapIter=newsTree.iterator();
+				while ( mapIter.hasNext() ) {
+					date=mapIter.next();
+//					writer.println("[ "+date.toString()+" ]");
+					writer.println("[ "+outputFmt.format(date)+" ]");
+					writer.flush();
+
+					events=result.getJSONArray( inputFmt.format(date) );
+					int sz=events.length();
+					for ( int i=0; i<sz; i++ ) {
+						event=events.getJSONObject(i);
+						// TODO: format
+						writer.println( "  "+event.getString("login")+" has "+
+								event.getString("action") + " " +
+								event.getInt("episodes") + " episodes of "+
+								event.getString("show")+""
+								);
+					}
+					writer.println("");
+					writer.flush();
+				}
+
+			} catch (Exception e) {
+				writer.println("--- oops: "+e.getMessage());
+				writer.flush();
+				e.printStackTrace();
+			}
+		} else {
+			writer.println("--- NULL returned");
+			writer.flush();
+		}
 	}
 }
