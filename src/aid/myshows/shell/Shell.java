@@ -34,7 +34,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -68,7 +67,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final int VERSION_BUILD=10;
+	public static final int VERSION_BUILD=14;
 
 	/**
 	 * auto-generated full version number<br>
@@ -773,33 +772,19 @@ public class Shell {
 //				System.out.println( result.toString(2) );
 
 				// parsing
-				/*
-				 * {
-			  "10.07.2011": [{
-			    "action": "watch",
-			    "episode": "s03e14",
-			    "episodeId": 687,
-			    "episodes": 1,
-			    "gender": "m",
-			    "login": "ilardm",
-			    "show": "Everybody Hates Chris",
-			    "showId": 9,
-			    "title": "Everybody Hates Easter"
-			  }],
-			  ...
-			  }
-				 */
-
 				SimpleDateFormat inputFmt=new SimpleDateFormat("dd.MM.yyyy");
 				SimpleDateFormat outputFmt=new SimpleDateFormat("E d MMM yyyy");
+
 				Date date=null;
 				String key=null;
-//				HashMap<Date, JSONArray> newsMap=new HashMap<Date, JSONArray>();
+
 				TreeSet<Date> newsTree=new TreeSet<Date>();
 				Iterator<String> iter=result.keys();
+
 				JSONArray events=null;
 				JSONObject event=null;
 
+				// sorting by date via tree
 				while ( iter.hasNext() ) {
 					key=iter.next();
 					date=inputFmt.parse( key );
@@ -818,12 +803,22 @@ public class Shell {
 					int sz=events.length();
 					for ( int i=0; i<sz; i++ ) {
 						event=events.getJSONObject(i);
-						// TODO: format
-						writer.println( "  "+event.getString("login")+" has "+
-								event.getString("action") + " " +
-								event.getInt("episodes") + " episodes of "+
-								event.getString("show")+""
-								);
+						int episodes=event.getInt("episodes");
+
+						writer.println("  "+event.getString("login")+" has "+
+									   event.getString("action")+"ed "+ // TODO: check if correct form
+									   episodes+" "+
+									   ( episodes>1 ? "episodes ":"episode ")+
+									   "of "+event.getString("show")+
+									   " ("+event.getInt("showId")+")"
+									   );
+
+						if ( episodes==1 ) {
+							writer.println("\t"+event.getString("episode")+" "+
+										   event.getString("title")+" "+
+										   "("+event.getInt("episodeId")+")"
+										   );
+						}
 					}
 					writer.println("");
 					writer.flush();
