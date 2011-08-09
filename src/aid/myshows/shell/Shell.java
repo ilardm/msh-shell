@@ -67,7 +67,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final int VERSION_BUILD=14;
+	public static final int VERSION_BUILD=15;
 
 	/**
 	 * auto-generated full version number<br>
@@ -294,7 +294,8 @@ public class Shell {
 				"\t"+"ser <$episodeId> <$ratio> - set episode ratio"+"\n"+
 				"\t"+"fav <$episodeId> <add|rm> - add/remove episode to favorites"+"\n"+
 				"\t"+"git - list ignored episodes"+"\n"+
-				"\t"+"ignored <$episodeId> <add|rm> - add/remove episode to ignored"+"\n"
+				"\t"+"ignored <$episodeId> <add|rm> - add/remove episode to ignored"+"\n"+
+				"\t"+"news - list friends updates"
 				);
 		writer.flush();
 	}
@@ -852,16 +853,19 @@ public class Shell {
 
 				// sorting by date via tree
 				while ( iter.hasNext() ) {
-					key=iter.next();
-					date=inputFmt.parse( key );
-//					System.out.println("+++ date "+key+" parsed to "+date);
-					newsTree.add( date );
+					try {
+						newsTree.add(
+								inputFmt.parse( iter.next() )
+								);
+					} catch (Exception e) {
+						System.err.println("--- oops: "+e.getMessage());
+						e.printStackTrace();
+					}
 				}
 
 				Iterator<Date> mapIter=newsTree.iterator();
 				while ( mapIter.hasNext() ) {
 					date=mapIter.next();
-//					writer.println("[ "+date.toString()+" ]");
 					writer.println("[ "+outputFmt.format(date)+" ]");
 					writer.flush();
 
@@ -869,17 +873,17 @@ public class Shell {
 					int sz=events.length();
 					for ( int i=0; i<sz; i++ ) {
 						event=events.getJSONObject(i);
-						int episodes=event.getInt("episodes");
+						int episodesNum=event.getInt("episodes");
 
 						writer.println("  "+event.getString("login")+" has "+
 									   event.getString("action")+"ed "+ // TODO: check if correct form
-									   episodes+" "+
-									   ( episodes>1 ? "episodes ":"episode ")+
+									   episodesNum+" "+
+									   ( episodesNum>1 ? "episodes ":"episode ")+
 									   "of "+event.getString("show")+
 									   " ("+event.getInt("showId")+")"
 									   );
 
-						if ( episodes==1 ) {
+						if ( episodesNum==1 ) {
 							writer.println("\t"+event.getString("episode")+" "+
 										   event.getString("title")+" "+
 										   "("+event.getInt("episodeId")+")"
