@@ -34,6 +34,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -57,7 +59,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final float VERSION=0.1F;
+	public static final float VERSION=0.2F;
 
 	/**
 	 * auto-generated build number<br>
@@ -65,7 +67,7 @@ public class Shell {
 	 *
 	 * <b>do not edit this!</b>
 	 */
-	public static final int VERSION_BUILD=16;
+	public static final int VERSION_BUILD=15;
 
 	/**
 	 * auto-generated full version number<br>
@@ -124,7 +126,7 @@ public class Shell {
 				" : "+aid.lib.myshows.MyshowsAPI.VERSION_FULL);
 
 		// check for compatible version
-		if ( aid.lib.myshows.MyshowsAPI.VERSION!=0.1F ) {
+		if ( aid.lib.myshows.MyshowsAPI.VERSION!=0.2F ) {
 			System.err.println("--- incompatible library version");
 			System.exit(1);
 		}
@@ -193,9 +195,54 @@ public class Shell {
 					uncheck(cmd);
 					continue;
 				}
-				
+
+				if ( cmd.trim().startsWith("news") ) {
+					news();
+					continue;
+				}
+
 				// low frequency
-				
+
+				if ( cmd.trim().startsWith("sst") ) {
+					cmd=cmd.replaceFirst("sst", "").trim();
+
+					setShowStatus(cmd);
+					continue;
+				}
+
+				if ( cmd.trim().startsWith("ser") ) {
+					cmd=cmd.replaceFirst("ser", "").trim();
+
+					setEpisodeRatio(cmd);
+					continue;
+				}
+
+				if ( cmd.trim().startsWith("fav") ) {
+					cmd=cmd.replaceFirst("fav", "").trim();
+
+					favoriteShow(cmd);
+					continue;
+				}
+
+				if ( cmd.trim().startsWith("git") ) {
+					getIgnoredEpisodes();
+					continue;
+				}
+
+				if ( cmd.trim().startsWith("ignored") ) {
+					cmd=cmd.replaceFirst("ignored", "").trim();
+
+					ignoreEpisode(cmd);
+					continue;
+				}
+
+				if ( cmd.trim().startsWith("ssr") ) {
+					cmd=cmd.replaceFirst("ssr", "").trim();
+
+					setShowRatio(cmd);
+					continue;
+				}
+
 				if ( cmd.trim().startsWith("help") || cmd.trim().equals("?") ) {
 					help();
 					continue;
@@ -218,7 +265,7 @@ public class Shell {
 				
 			} while ( true );
 			
-			writer.println("\nbue!");
+			writer.println("\nbye!");
 			writer.flush();
 			
 		} catch (Exception e) {
@@ -241,8 +288,14 @@ public class Shell {
 				"\t"+"logout - logout from MyShows"+"\n"+
 				"\t"+"exit - exit from shell"+"\n"+
 				"\t"+"ls [$showId] [seen] [next] [unwatched] - list shows/episodes"+"\n"+
-				"\t"+"check [$episodeId] [$raio] - mark show/episode as seen [with ratio]"+"\n"+
-				"\t"+"uncheck [$episodeId] - mark show/eisode as unseen"+"\n"
+				"\t"+"check <$episodeId> [$raio] - mark show/episode as seen [with ratio]"+"\n"+
+				"\t"+"uncheck <$episodeId> - mark show/eisode as unseen"+"\n"+
+				"\t"+"sst <$showId> <$status> - set show status $status is one of (watching, later, cancelled, remove)"+"\n"+
+				"\t"+"ser <$episodeId> <$ratio> - set episode ratio"+"\n"+
+				"\t"+"fav <$episodeId> <add|rm> - add/remove episode to favorites"+"\n"+
+				"\t"+"git - list ignored episodes"+"\n"+
+				"\t"+"ignored <$episodeId> <add|rm> - add/remove episode to ignored"+"\n"+
+				"\t"+"news - list friends updates"
 				);
 		writer.flush();
 	}
@@ -254,22 +307,26 @@ public class Shell {
 	 * 		Notifies about insufficient arguments
 	 */
 	protected void login(String _args) {
-		if ( _args==null ) {
-			// TODO: rewrite: don't call .split method - exit immediately
-			_args="";	// workaround to show help message
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			return;
 		}
-		
+
+		if ( mshClient.isLoggedIn() ) {
+			writer.println("please log out first");
+			return;
+		}
+
 		String[] args=_args.split(" ");
 		boolean es=false;
-		
+
 		if ( args.length>=2 ) {
 			es=mshClient.login(args[0], args[1]);
 		} else {
-			writer.println("--- not enought params");
 			writer.println("use: login <username> <password>");
 			writer.flush();
 		}
-		
+
 		writer.println("+++ login: "+ (es ? "done" : "failed") );
 		writer.flush();
 	}
@@ -278,8 +335,14 @@ public class Shell {
 	 * calls <code>logout()</code> @ API
 	 */
 	protected void logout() {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		boolean es=mshClient.logout();
-		
+
 		writer.println("+++ logout: "+ (es ? "done" : "failed") );
 		writer.flush();
 	}
@@ -289,6 +352,12 @@ public class Shell {
 	 * @param _args arguments passed to <code>ls</code> command
 	 */
 	protected void ls(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		JSONArray result=null;
 		lsResultType resultType=null;
 		
@@ -397,12 +466,107 @@ public class Shell {
 		}
 		
 	}
-	
+
+	/**
+	 * prints ignored $episodeId list
+	 */
+	protected void getIgnoredEpisodes() {
+//		System.out.println("+++ shell.getIgnored");
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
+		JSONArray ret=mshClient.getIgnoredEpisodes();
+
+		if ( ret!=null ) {
+			TreeSet<Integer> outputTree=new TreeSet<Integer>();
+
+			try {
+//				System.out.println( ret.toString(2) );
+				int sz=ret.length();
+				for( int i=0; i<sz; i++ ) {
+					outputTree.add( ret.getInt(i) );
+				}
+
+				Iterator<Integer> iter=outputTree.iterator();
+				while ( iter.hasNext() ) {
+					writer.println(
+							iter.next()
+							);
+				}
+				writer.println("----\n("+outputTree.size()+")");
+
+				writer.flush();
+			} catch (Exception e) {
+				writer.println("--- oops: "+e.getMessage());
+				writer.flush();
+				e.printStackTrace();
+
+			}
+		} else {
+			System.err.println("--- ret=NULL");
+		}
+	}
+
+	/**
+	 * add/remove $episodeId to/from ignore list
+	 * @param _args arguments passed to <code>ignore</code> command
+	 */
+	protected void ignoreEpisode(String _args) {
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		String[] args=_args.split(" ");
+		int episode=-1;
+		boolean add=false;
+
+		if ( args.length>1 ) {
+			try {
+				episode=Integer.parseInt( args[0] );
+				if ( args[1].equals("add") ) {
+					add=true;
+				} else if ( args[1].equals("rm") ) {
+					add=false;
+				} else {
+					System.err.println("--- wrong action: '"+args[1]+"'");
+				}
+			} catch (Exception e) {
+				writer.println("--- wrong episode || action: '"+_args+"'");
+				writer.flush();
+
+				return;
+			}
+		} else {
+			writer.println("--- not enought params");
+			writer.flush();
+		}
+
+		boolean es=mshClient.ignoreEpisode(episode, add);
+		writer.println("+++ ignoreEpisode: "+ (es ? "done" : "failed") );
+		writer.flush();
+	}
+
 	/**
 	 * marks episode as seen
 	 * @param _args episodeId passed to <code>check</code> command
 	 */
 	protected void check(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
 			writer.flush();
@@ -448,6 +612,11 @@ public class Shell {
 	 * @param _args $episodeId passed to <code>uncheck</code> command
 	 */
 	protected void uncheck(String _args) {
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
 			writer.flush();
@@ -477,5 +646,262 @@ public class Shell {
 		boolean es=mshClient.unCheckEpisode(episode);
 		writer.println("+++ uncheck: "+ (es ? "done" : "failed") );
 		writer.flush();
+	}
+
+	/**
+	 * sets $showId status
+	 * @param _args arguments passed to <code>sst</code> command
+	 */
+	protected void setShowStatus(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		String[] args=_args.split(" ");
+		int show=-1;
+		char status='_';
+
+		if ( args.length>1 ) {
+			try {
+				show=Integer.parseInt( args[0] );
+				status=args[1].charAt(0);
+			} catch (Exception e) {
+				writer.println("--- wrong episode number: "+args[0]);
+				writer.flush();
+
+				return;
+			}
+		} else {
+			writer.println("--- not enought params");
+			writer.flush();
+		}
+
+		boolean es=mshClient.setShowStatus(show, status);
+		writer.println("+++ setShowStatus: "+ (es ? "done" : "failed") );
+		writer.flush();
+	}
+
+	/**
+	 * sets $showId ratio
+	 * @param _args arguments passed to <code>ssr</code> command
+	 */
+	protected void setShowRatio(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		String[] args=_args.split(" ");
+		int show=-1;
+		int ratio=-1;
+
+		if ( args.length>1 ) {
+			try {
+				show=Integer.parseInt( args[0] );
+				ratio=Integer.parseInt( args[1] );
+			} catch (Exception e) {
+				writer.println("--- wrong show number: "+args[0]);
+				writer.flush();
+
+				return;
+			}
+		} else {
+			writer.println("--- not enought params");
+			writer.flush();
+		}
+
+		boolean es=mshClient.setShowRatio(show, ratio);
+		writer.println("+++ setShowRatio: "+ (es ? "done" : "failed") );
+		writer.flush();
+	}
+
+	/**
+	 * sets $episodeId ratio
+	 * @param _args arguments passed to <code>ser</code> command
+	 */
+	protected void setEpisodeRatio(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		String[] args=_args.split(" ");
+		int episode=-1;
+		int ratio=-1;
+
+		if ( args.length>1 ) {
+			try {
+				episode=Integer.parseInt( args[0] );
+				ratio=Integer.parseInt( args[1] );
+			} catch (Exception e) {
+				writer.println("--- wrong episode number: "+args[0]);
+				writer.flush();
+
+				return;
+			}
+		} else {
+			writer.println("--- not enought params");
+			writer.flush();
+		}
+
+		boolean es=mshClient.setEpisodeRatio(episode, ratio);
+		writer.println("+++ setEpisodeRatio: "+ (es ? "done" : "failed") );
+		writer.flush();
+	}
+
+	/**
+	 * add/remove $showId to/from favorite list
+	 * @param _args arguments passed to <code>favorite</code> command
+	 */
+	protected void favoriteShow(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		String[] args=_args.split(" ");
+		int show=-1;
+		boolean add=false;
+
+		if ( args.length>1 ) {
+			try {
+				show=Integer.parseInt( args[0] );
+				if ( args[1].equals("add") ) {
+					add=true;
+				} else if ( args[1].equals("rm") ) {
+					add=false;
+				} else {
+					System.err.println("--- wrong action: '"+args[1]+"'");
+				}
+			} catch (Exception e) {
+				writer.println("--- wrong show || action: '"+_args+"'");
+				writer.flush();
+
+				return;
+			}
+		} else {
+			writer.println("--- not enought params");
+			writer.flush();
+		}
+
+		boolean es=mshClient.favoriteShow(show, add);
+		writer.println("+++ favoriteShow: "+ (es ? "done" : "failed") );
+		writer.flush();
+	}
+
+	/**
+	 * prints news list
+	 */
+	protected void news() {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
+		JSONObject result=mshClient.getFriendsUpdates();
+
+		if ( result!=null ) {
+			try {
+//				System.out.println( result.toString(2) );
+
+				// parsing
+				SimpleDateFormat inputFmt=new SimpleDateFormat("dd.MM.yyyy");
+				SimpleDateFormat outputFmt=new SimpleDateFormat("E d MMM yyyy");
+
+				Date date=null;
+				String key=null;
+
+				TreeSet<Date> newsTree=new TreeSet<Date>();
+				Iterator<String> iter=result.keys();
+
+				JSONArray events=null;
+				JSONObject event=null;
+
+				// sorting by date via tree
+				while ( iter.hasNext() ) {
+					try {
+						newsTree.add(
+								inputFmt.parse( iter.next() )
+								);
+					} catch (Exception e) {
+						System.err.println("--- oops: "+e.getMessage());
+						e.printStackTrace();
+					}
+				}
+
+				Iterator<Date> mapIter=newsTree.iterator();
+				while ( mapIter.hasNext() ) {
+					date=mapIter.next();
+					writer.println("[ "+outputFmt.format(date)+" ]");
+					writer.flush();
+
+					events=result.getJSONArray( inputFmt.format(date) );
+					int sz=events.length();
+					for ( int i=0; i<sz; i++ ) {
+						event=events.getJSONObject(i);
+						int episodesNum=event.getInt("episodes");
+
+						writer.println("  "+event.getString("login")+" has "+
+									   event.getString("action")+"ed "+ // TODO: check if correct form
+									   episodesNum+" "+
+									   ( episodesNum>1 ? "episodes ":"episode ")+
+									   "of "+event.getString("show")+
+									   " ("+event.getInt("showId")+")"
+									   );
+
+						if ( episodesNum==1 ) {
+							writer.println("\t"+event.getString("episode")+" "+
+										   event.getString("title")+" "+
+										   "("+event.getInt("episodeId")+")"
+										   );
+						}
+					}
+					writer.println("");
+					writer.flush();
+				}
+
+			} catch (Exception e) {
+				writer.println("--- oops: "+e.getMessage());
+				writer.flush();
+				e.printStackTrace();
+			}
+		} else {
+			writer.println("--- NULL returned");
+			writer.flush();
+		}
 	}
 }
