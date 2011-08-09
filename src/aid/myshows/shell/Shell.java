@@ -306,22 +306,26 @@ public class Shell {
 	 * 		Notifies about insufficient arguments
 	 */
 	protected void login(String _args) {
-		if ( _args==null ) {
-			// TODO: rewrite: don't call .split method - exit immediately
-			_args="";	// workaround to show help message
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			return;
 		}
-		
+
+		if ( mshClient.isLoggedIn() ) {
+			writer.println("please log out first");
+			return;
+		}
+
 		String[] args=_args.split(" ");
 		boolean es=false;
-		
+
 		if ( args.length>=2 ) {
 			es=mshClient.login(args[0], args[1]);
 		} else {
-			writer.println("--- not enought params");
 			writer.println("use: login <username> <password>");
 			writer.flush();
 		}
-		
+
 		writer.println("+++ login: "+ (es ? "done" : "failed") );
 		writer.flush();
 	}
@@ -330,8 +334,14 @@ public class Shell {
 	 * calls <code>logout()</code> @ API
 	 */
 	protected void logout() {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		boolean es=mshClient.logout();
-		
+
 		writer.println("+++ logout: "+ (es ? "done" : "failed") );
 		writer.flush();
 	}
@@ -341,6 +351,12 @@ public class Shell {
 	 * @param _args arguments passed to <code>ls</code> command
 	 */
 	protected void ls(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		JSONArray result=null;
 		lsResultType resultType=null;
 		
@@ -455,6 +471,10 @@ public class Shell {
 	 */
 	protected void getIgnoredEpisodes() {
 //		System.out.println("+++ shell.getIgnored");
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
 
 		JSONArray ret=mshClient.getIgnoredEpisodes();
 
@@ -493,6 +513,11 @@ public class Shell {
 	 * @param _args arguments passed to <code>ignore</code> command
 	 */
 	protected void ignoreEpisode(String _args) {
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
 			writer.flush();
@@ -535,6 +560,12 @@ public class Shell {
 	 * @param _args episodeId passed to <code>check</code> command
 	 */
 	protected void check(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
 			writer.flush();
@@ -580,6 +611,11 @@ public class Shell {
 	 * @param _args $episodeId passed to <code>uncheck</code> command
 	 */
 	protected void uncheck(String _args) {
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
 			writer.flush();
@@ -616,6 +652,12 @@ public class Shell {
 	 * @param _args arguments passed to <code>sst</code> command
 	 */
 	protected void setShowStatus(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
 			writer.flush();
@@ -652,6 +694,12 @@ public class Shell {
 	 * @param _args arguments passed to <code>ssr</code> command
 	 */
 	protected void setShowRatio(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
 			writer.flush();
@@ -688,6 +736,12 @@ public class Shell {
 	 * @param _args arguments passed to <code>ser</code> command
 	 */
 	protected void setEpisodeRatio(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
 			writer.flush();
@@ -724,6 +778,12 @@ public class Shell {
 	 * @param _args arguments passed to <code>favorite</code> command
 	 */
 	protected void favoriteShow(String _args) {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		if ( _args==null || _args.equals("") ) {
 			writer.println("--- not enought params");
 			writer.flush();
@@ -765,6 +825,12 @@ public class Shell {
 	 * prints news list
 	 */
 	protected void news() {
+
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
 		JSONObject result=mshClient.getFriendsUpdates();
 
 		if ( result!=null ) {
