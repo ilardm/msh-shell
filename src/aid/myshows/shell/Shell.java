@@ -126,7 +126,8 @@ public class Shell {
 				" : "+aid.lib.myshows.MyshowsAPI.VERSION_FULL);
 
 		// check for compatible version
-		if ( aid.lib.myshows.MyshowsAPI.VERSION!=0.2F ) {
+		if ( aid.lib.myshows.MyshowsAPI.VERSION!=0.2F &&
+				aid.lib.myshows.MyshowsAPI.VERSION_BUILD<18 ) {
 			System.err.println("--- incompatible library version");
 			System.exit(1);
 		}
@@ -217,6 +218,13 @@ public class Shell {
 					continue;
 				}
 
+				if ( cmd.trim().startsWith("find") ) {
+					cmd=cmd.replaceFirst("find", "").trim();
+
+					find(cmd);
+					continue;
+				}
+
 				if ( cmd.trim().startsWith("fav") ) {
 					cmd=cmd.replaceFirst("fav", "").trim();
 
@@ -292,6 +300,7 @@ public class Shell {
 				"\t"+"uncheck <$episodeId> - mark show/eisode as unseen"+"\n"+
 				"\t"+"sst <$showId> <$status> - set show status $status is one of (watching, later, cancelled, remove)"+"\n"+
 				"\t"+"ser <$episodeId> <$ratio> - set episode ratio"+"\n"+
+				"\t"+"find <keyword> - search shows by keyword"+"\n"+
 				"\t"+"fav <$episodeId> <add|rm> - add/remove episode to favorites"+"\n"+
 				"\t"+"git - list ignored episodes"+"\n"+
 				"\t"+"ignored <$episodeId> <add|rm> - add/remove episode to ignored"+"\n"+
@@ -902,6 +911,63 @@ public class Shell {
 		} else {
 			writer.println("--- NULL returned");
 			writer.flush();
+		}
+	}
+
+	protected void find(String _args) {
+		if ( !mshClient.isLoggedIn() ) {
+			writer.println("you are not logged in yet");
+			return;
+		}
+
+		if ( _args==null || _args.equals("") ) {
+			writer.println("--- not enought params");
+			writer.flush();
+
+			return;
+		}
+
+		JSONObject result=mshClient.search(_args);
+		if ( result!=null ) {
+			try {
+//				writer.println( result.toString(2) );
+				Iterator<String> resultIter=result.keys();
+				JSONObject show=null;
+
+				String out=null;
+				HashMap<Integer, String> outputMap=new HashMap<Integer, String>();
+
+				while ( resultIter.hasNext() ) {
+					show=result.getJSONObject( resultIter.next() );
+
+					out=String.format("%1$-5d | %2$-45.45s | %3$1s | %4$-2.1f | %5$3d",	// id, title, status, rating, runtime
+							show.getInt("id"),
+							show.getString("title"),
+							show.getString("status").charAt(0),
+							show.getDouble("rating"),
+							show.getInt("runtime")
+							);
+					outputMap.put(show.getInt("id"), out);
+				}
+
+				// sorted output
+				TreeSet<Integer> sortedSet=new TreeSet<Integer>(outputMap.keySet());
+				Iterator<Integer> iter=sortedSet.iterator();
+				while ( iter.hasNext() ) {
+					writer.println(
+							outputMap.get( iter.next() )
+							);
+				}
+				writer.println("----\n("+outputMap.size()+")");
+
+				writer.flush();
+			} catch (Exception e) {
+				writer.println("--- oops: "+e.getMessage());
+				writer.flush();
+				e.printStackTrace();
+			}
+		} else {
+			writer.println("--- NULL from API call");
 		}
 	}
 }
